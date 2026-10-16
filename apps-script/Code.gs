@@ -124,7 +124,7 @@ function notifyGuest(data, bookings) {
     : "Your stay at The Haus \u2014 " + (bookings[0].room || "") + " \u00B7 " + prettyDate(bookings[0].checkIn);
 
   var plain = "Hi " + first + ",\n\nThanks \u2014 we've got your " + (many ? bookings.length + " requests" : "request") +
-    " and we'll be in touch shortly to confirm. Nothing to pay, ever.\n\n";
+    " and we'll be in touch shortly to confirm.\n\n";
   var rows = "";
   for (var i = 0; i < bookings.length; i++) {
     if (many) {
@@ -137,7 +137,7 @@ function notifyGuest(data, bookings) {
 
   var intro = "Hi <strong>" + esc(first) + "</strong> \u2014 thanks! We\u2019ve got your " +
     (many ? esc(bookings.length) + " requests" : "request") +
-    " and we\u2019ll be in touch shortly to confirm. Nothing to pay, ever. \uD83E\uDD0D";
+    " and we\u2019ll be in touch shortly to confirm. \uD83E\uDD0D";
   var html = cardHtml("You\u2019re on the list \uD83C\uDFD4\uFE0F", intro, rows, many ? "" : (bookings[0].reference || "\u2014"));
 
   MailApp.sendEmail({
