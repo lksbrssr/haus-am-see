@@ -18,6 +18,19 @@
 // Leave "" to disable the check, or set to match SHEETS_WEBHOOK_SECRET in Vercel.
 var SECRET = "";
 
+// Set to your address to get an email on every request. Leave "" to disable.
+var NOTIFY_EMAIL = "";
+
+// Email a notification for one booking (no-op if NOTIFY_EMAIL is empty).
+function notify(data, b) {
+  if (!NOTIFY_EMAIL) return;
+  MailApp.sendEmail(NOTIFY_EMAIL, "New stay request: " + (b.room || ""),
+    (data.name || "") + " (" + (data.email || "") + ")\n" +
+    (b.checkIn || "") + " to " + (b.checkOut || "") +
+    " — " + (b.nights || "") + " night(s), " + (b.guests || "") + " guest(s)\n" +
+    "Ref: " + (b.reference || "") + "\nNotes: " + (data.notes || ""));
+}
+
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
@@ -48,6 +61,7 @@ function doPost(e) {
         ];
       });
       sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+      data.bookings.forEach(function (b) { notify(data, b); });
       return json({ ok: true });
     }
 
@@ -65,10 +79,7 @@ function doPost(e) {
       data.notes || "",
     ]);
 
-    // Optional: email yourself on every request. Uncomment and set your address.
-    // MailApp.sendEmail("you@example.com", "New stay request: " + data.room,
-    //   data.name + " (" + data.email + ") — " + data.checkIn + " to " + data.checkOut +
-    //   "\nGuests: " + data.guests + "\nNotes: " + data.notes + "\nRef: " + data.reference);
+    notify(data, data);
 
     return json({ ok: true });
   } catch (err) {
