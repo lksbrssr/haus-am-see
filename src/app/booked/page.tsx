@@ -23,8 +23,8 @@ export default function BookedPage({
           </h1>
           <p className="mt-3 leading-relaxed text-pine/90">
             {n > 1
-              ? `Thank you — we've got your ${n} stay requests and we'll email you shortly to confirm. Nothing to pay, ever.`
-              : "Thank you — we've got your request and we'll email you shortly to confirm. Nothing to pay, ever."}
+              ? `Thank you — we've got your ${n} stay requests and we'll email you shortly to confirm.`
+              : "Thank you — we've got your request and we'll email you shortly to confirm."}
           </p>
 
           {ref && (
