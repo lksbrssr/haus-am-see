@@ -44,6 +44,48 @@ function esc(v) {
 }
 
 // Email a notification for one booking (no-op if NOTIFY_EMAIL is empty).
+function detailRow(label, value) {
+  return '<tr>' +
+    '<td style="padding:10px 0;border-bottom:1px solid ' + C.sand + ';font:13px/1.4 Helvetica,Arial,sans-serif;color:' + C.pine + ';text-transform:uppercase;letter-spacing:.06em;width:34%;vertical-align:top;">' + esc(label) + '</td>' +
+    '<td style="padding:10px 0;border-bottom:1px solid ' + C.sand + ';font:16px/1.5 Georgia,\'Times New Roman\',serif;color:' + C.ink + ';">' + value + '</td>' +
+    '</tr>';
+}
+
+// Shared Haus-styled email card. `rows` is pre-built HTML, `headline`/`intro` vary by audience.
+function cardHtml(headline, intro, rows, reference) {
+  return '<div style="background:' + C.cream + ';padding:28px 12px;font-family:Helvetica,Arial,sans-serif;">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;">' +
+      '<tr><td style="background:' + C.forest + ';border-radius:16px 16px 0 0;padding:26px 30px;">' +
+        '<div style="font:12px/1 Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:' + C.clay + ';">The Haus &middot; Bayrischzell</div>' +
+        '<div style="margin-top:8px;font:600 26px/1.2 Georgia,\'Times New Roman\',serif;color:' + C.cream + ';">' + headline + '</div>' +
+      '</td></tr>' +
+      '<tr><td style="background:#fff;padding:26px 30px;">' +
+        '<p style="margin:0 0 18px;font:17px/1.6 Georgia,\'Times New Roman\',serif;color:' + C.ink + ';">' + intro + '</p>' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' + rows + '</table>' +
+        (reference ? '<div style="margin-top:22px;display:inline-block;background:' + C.sand + ';color:' + C.forest + ';font:13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;padding:9px 14px;border-radius:999px;">Ref ' + esc(reference) + '</div>' : '') +
+      '</td></tr>' +
+      '<tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:18px 30px 26px;border-top:1px solid ' + C.sand + ';">' +
+        '<p style="margin:0;font:13px/1.6 Helvetica,Arial,sans-serif;color:' + C.pine + ';">Reitberg 16, 83735 Bayrischzell &middot; it\u2019s on us \uD83E\uDD0D</p>' +
+      '</td></tr>' +
+    '</table>' +
+  '</div>';
+}
+
+function stayRows(b) {
+  return detailRow("Room", esc(b.room || "\u2014")) +
+    detailRow("Dates", esc(prettyDate(b.checkIn)) + ' <span style="color:' + C.clay + ';">\u2192</span> ' + esc(prettyDate(b.checkOut))) +
+    detailRow("Nights", esc(b.nights || "\u2014")) +
+    detailRow("Guests", esc(b.guests || "\u2014"));
+}
+
+function stayPlain(b) {
+  return (b.room || "") + "\n" +
+    prettyDate(b.checkIn) + " \u2192 " + prettyDate(b.checkOut) +
+    "  \u00B7  " + (b.nights || "") + " night(s)  \u00B7  " + (b.guests || "") + " guest(s)\n" +
+    "Ref: " + (b.reference || "") + "\n";
+}
+
+// Host notification — goes to NOTIFY_EMAIL (Caroline).
 function notify(data, b) {
   if (!NOTIFY_EMAIL) return;
   var name = data.name || "A guest";
@@ -51,47 +93,15 @@ function notify(data, b) {
     " \u00B7 " + prettyDate(b.checkIn);
 
   var plain = name + " (" + (data.email || "") + (data.phone ? ", " + data.phone : "") + ")\n" +
-    (b.room || "") + "\n" +
-    prettyDate(b.checkIn) + " \u2192 " + prettyDate(b.checkOut) +
-    "  \u00B7  " + (b.nights || "") + " night(s)  \u00B7  " + (b.guests || "") + " guest(s)\n" +
-    "Ref: " + (b.reference || "") + "\n" +
-    (data.notes ? "Notes: " + data.notes + "\n" : "");
-
-  function row(label, value) {
-    return '<tr>' +
-      '<td style="padding:10px 0;border-bottom:1px solid ' + C.sand + ';font:13px/1.4 Helvetica,Arial,sans-serif;color:' + C.pine + ';text-transform:uppercase;letter-spacing:.06em;width:34%;vertical-align:top;">' + esc(label) + '</td>' +
-      '<td style="padding:10px 0;border-bottom:1px solid ' + C.sand + ';font:16px/1.5 Georgia,\'Times New Roman\',serif;color:' + C.ink + ';">' + value + '</td>' +
-      '</tr>';
-  }
+    stayPlain(b) + (data.notes ? "Notes: " + data.notes + "\n" : "");
 
   var contact = esc(name) +
     ' &middot; <a href="mailto:' + esc(data.email) + '" style="color:' + C.lake + ';text-decoration:none;">' + esc(data.email) + '</a>' +
     (data.phone ? ' &middot; ' + esc(data.phone) : '');
 
-  var html =
-  '<div style="background:' + C.cream + ';padding:28px 12px;font-family:Helvetica,Arial,sans-serif;">' +
-    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;">' +
-      '<tr><td style="background:' + C.forest + ';border-radius:16px 16px 0 0;padding:26px 30px;">' +
-        '<div style="font:12px/1 Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:' + C.clay + ';">The Haus &middot; Bayrischzell</div>' +
-        '<div style="margin-top:8px;font:600 26px/1.2 Georgia,\'Times New Roman\',serif;color:' + C.cream + ';">New stay request \uD83C\uDFD4\uFE0F</div>' +
-      '</td></tr>' +
-      '<tr><td style="background:#fff;padding:26px 30px;">' +
-        '<p style="margin:0 0 18px;font:17px/1.6 Georgia,\'Times New Roman\',serif;color:' + C.ink + ';"><strong>' + esc(name) + '</strong> would like to stay.</p>' +
-        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">' +
-          row("Room", esc(b.room || "\u2014")) +
-          row("Dates", esc(prettyDate(b.checkIn)) + ' <span style="color:' + C.clay + ';">\u2192</span> ' + esc(prettyDate(b.checkOut))) +
-          row("Nights", esc(b.nights || "\u2014")) +
-          row("Guests", esc(b.guests || "\u2014")) +
-          row("Contact", contact) +
-          (data.notes ? row("Notes", esc(data.notes)) : "") +
-        '</table>' +
-        '<div style="margin-top:22px;display:inline-block;background:' + C.sand + ';color:' + C.forest + ';font:13px/1 Helvetica,Arial,sans-serif;letter-spacing:.08em;padding:9px 14px;border-radius:999px;">Ref ' + esc(b.reference || "\u2014") + '</div>' +
-      '</td></tr>' +
-      '<tr><td style="background:#fff;border-radius:0 0 16px 16px;padding:18px 30px 26px;border-top:1px solid ' + C.sand + ';">' +
-        '<p style="margin:0;font:13px/1.6 Helvetica,Arial,sans-serif;color:' + C.pine + ';">Reitberg 16, 83735 Bayrischzell &middot; it\u2019s on us \uD83E\uDD0D</p>' +
-      '</td></tr>' +
-    '</table>' +
-  '</div>';
+  var rows = stayRows(b) + detailRow("Contact", contact) + (data.notes ? detailRow("Notes", esc(data.notes)) : "");
+  var html = cardHtml("New stay request \uD83C\uDFD4\uFE0F",
+    '<strong>' + esc(name) + '</strong> would like to stay.', rows, b.reference || "\u2014");
 
   MailApp.sendEmail({
     to: NOTIFY_EMAIL,
@@ -100,6 +110,43 @@ function notify(data, b) {
     htmlBody: html,
     name: "The Haus",
     replyTo: data.email || NOTIFY_EMAIL,
+  });
+}
+
+// Guest confirmation — one email to the booker covering all their stays.
+// `bookings` is an array; no-op if we have no email to reach them.
+function notifyGuest(data, bookings) {
+  if (!data.email || !bookings || !bookings.length) return;
+  var first = (data.name || "there").split(" ")[0];
+  var many = bookings.length > 1;
+  var subject = many
+    ? "Your " + bookings.length + " stays at The Haus"
+    : "Your stay at The Haus \u2014 " + (bookings[0].room || "") + " \u00B7 " + prettyDate(bookings[0].checkIn);
+
+  var plain = "Hi " + first + ",\n\nThanks \u2014 we've got your " + (many ? bookings.length + " requests" : "request") +
+    " and we'll be in touch shortly to confirm. Nothing to pay, ever.\n\n";
+  var rows = "";
+  for (var i = 0; i < bookings.length; i++) {
+    if (many) {
+      rows += detailRow("Stay " + (i + 1), '<span style="color:' + C.pine + ';">Ref ' + esc(bookings[i].reference || "\u2014") + '</span>');
+    }
+    rows += stayRows(bookings[i]);
+    plain += stayPlain(bookings[i]) + "\n";
+  }
+  plain += "Reitberg 16, 83735 Bayrischzell\n";
+
+  var intro = "Hi <strong>" + esc(first) + "</strong> \u2014 thanks! We\u2019ve got your " +
+    (many ? esc(bookings.length) + " requests" : "request") +
+    " and we\u2019ll be in touch shortly to confirm. Nothing to pay, ever. \uD83E\uDD0D";
+  var html = cardHtml("You\u2019re on the list \uD83C\uDFD4\uFE0F", intro, rows, many ? "" : (bookings[0].reference || "\u2014"));
+
+  MailApp.sendEmail({
+    to: data.email,
+    subject: subject,
+    body: plain,
+    htmlBody: html,
+    name: "The Haus",
+    replyTo: NOTIFY_EMAIL || data.email,
   });
 }
 
@@ -134,6 +181,7 @@ function doPost(e) {
       });
       sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
       data.bookings.forEach(function (b) { notify(data, b); });
+      notifyGuest(data, data.bookings);
       return json({ ok: true });
     }
 
@@ -152,6 +200,7 @@ function doPost(e) {
     ]);
 
     notify(data, data);
+    notifyGuest(data, [data]);
 
     return json({ ok: true });
   } catch (err) {
